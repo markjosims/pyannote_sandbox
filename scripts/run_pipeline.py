@@ -27,7 +27,9 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
             #num_speakers=args.num_speakers,
             hook=hook,
         )
-    breakpoint()
+    
+    with open(args.output, 'w') as f:
+        output.write_lab(f)
 
     return 0
 
