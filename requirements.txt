@@ -1,0 +1,4 @@
+pyannote.audio
+transformers
+torchaudio
+huggingface_hub
