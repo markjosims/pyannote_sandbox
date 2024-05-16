@@ -9,14 +9,15 @@ def init_parser() -> ArgumentParser:
     parser = ArgumentParser("PyAnnote VAD runner")
     parser.add_argument("-i", "--input", help="Filepath to run VAD on")
     parser.add_argument("-o", "--output", help="Filepath to save predictions to")
-    #parser.add_argument("-n", "--num_speakers", help="Number of speakers in file", default=1)
+    # parser.add_argument("-t", "--task", help="Task to run (VAD or LID)")
+    parser.add_argument("-n", "--num_speakers", help="Number of speakers in file", default=1)
     return parser
 
 def main(argv: Optional[Sequence[str]] = None) -> int:
     parser = init_parser()
     args = parser.parse_args(argv)
 
-    pipeline = Pipeline.from_pretrained("pyannote/voice-activity-detection")
+    pipeline = Pipeline.from_pretrained("pyannote/speaker-diarization-3.1")
     if torch.cuda.is_available():
         pipeline.to(torch.device("cuda"))
     
@@ -24,7 +25,7 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     with ProgressHook() as hook:
         output = pipeline(
             {"waveform": wav, "sample_rate": sr},
-            #num_speakers=args.num_speakers,
+            num_speakers=args.num_speakers,
             hook=hook,
         )
     
