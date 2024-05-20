@@ -6,13 +6,18 @@ from pyannote.audio.pipelines.utils.hook import ProgressHook
 import torch
 import torchaudio
 import json
+import numpy as np
 
 SAMPLE_RATE = 16000
+
+"""
+Pyannote and HuggingFace entry points
+"""
 
 def perform_sli(
         in_fp: str,
         pipe: Optional[Pipeline]= None,
-    ) -> List[Dict[str, Union[str, int]]]:
+    ) -> List[Dict[str, Union[str, float]]]:
         wav = load_and_resample(in_fp)
         wav = wav[0].numpy() # hf pipeline expects 1D numpy array
 
@@ -29,7 +34,7 @@ def perform_sli(
 def perform_vad(
         in_fp: str,
         pipe: Optional[PyannotePipeline] = None,
-    ) -> int:
+    ):
     wav = load_and_resample(in_fp)
 
     if not pipe:
@@ -42,11 +47,18 @@ def perform_vad(
         )
     return result
 
+def pyannote_result_to_json(result)  -> List[Dict[str, float]]:
+    segments = []
+    for track, _ in result.itertracks():
+        segment = {'start': track.start, 'end': track.end}
+        segments.append(segment)
+    return segments
+
 def diarize(
         in_fp: str,
         pipe: Optional[PyannotePipeline] = None,
         num_speakers: int = 1,
-    ) -> int:
+    ):
     wav = load_and_resample(in_fp)
 
     if not pipe:
@@ -60,10 +72,21 @@ def diarize(
         )
     return result
 
+"""
+Audio handling methods
+"""
+
 def load_and_resample(fp: str) -> torch.tensor:
     wav_orig, sr_orig = torchaudio.load(fp)
     wav = torchaudio.functional.resample(wav_orig, sr_orig, SAMPLE_RATE)
     return wav
+
+def remove_segments(audio: Union[torch.tensor, np.ndarray]):
+    ...
+
+"""
+Main script
+"""
 
 def init_parser() -> ArgumentParser:
     parser = ArgumentParser("VAD, LID and diarization runner")
@@ -87,16 +110,17 @@ def main(argv: Optional[Sequence[str]] = None) -> int:
     args = parser.parse_args(argv)
 
     if args.TASK == 'SLI':
-        result = perform_sli(args.input)
+        labels = perform_sli(args.input)
     elif args.TASK == 'VAD':
         result = perform_vad(args.input)
+        labels = pyannote_result_to_json(result)
     elif args.TASK == 'DRZ':
         result = diarize(args.input, num_speakers=args.num_speakers)
-    breakpoint()
+        labels = pyannote_result_to_json(result)
 
     out_fp = args.output or args.input.replace('.wav', '.json')
     with open(out_fp, 'w') as f:
-        json.dump(result, f, ensure_ascii=False, indent=2)
+        json.dump(labels, f, ensure_ascii=False, indent=2)
 
     return 0
 
