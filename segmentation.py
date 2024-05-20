@@ -16,11 +16,16 @@ Pyannote and HuggingFace entry points
 """
 
 def perform_sli(
-        in_fp: str,
+        in_fp: Optional[str] = None,
+        wav: Union[np.ndarray, torch.Tensor] = None,
         pipe: Optional[Pipeline]= None,
     ) -> List[Dict[str, Union[str, float]]]:
-        wav = load_and_resample(in_fp)
-        wav = wav[0].numpy() # hf pipeline expects 1D numpy array
+        if not wav:
+            wav = load_and_resample(in_fp)
+        if len(wav.shape)==2:
+            wav = wav[0]
+        if type(wav) is torch.Tensor:
+            wav = wav.numpy()
 
 
         if not pipe:
