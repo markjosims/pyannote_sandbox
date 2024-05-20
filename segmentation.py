@@ -81,10 +81,34 @@ def load_and_resample(fp: str) -> torch.tensor:
     wav = torchaudio.functional.resample(wav_orig, sr_orig, SAMPLE_RATE)
     return wav
 
-def remove_segments(audio: Union[torch.tensor, np.ndarray]):
-    ...
+def sec_to_samples(time_sec: float):
+    return int(time_sec*SAMPLE_RATE)
+
+def remove_segments(
+        audio: Union[torch.Tensor, np.ndarray],
+        out_segments: List[Dict[str, float]]
+    ) -> torch.tensor:
+    if len(audio.shape) == 2:
+        audio = audio[0]
+    if type(audio) is torch.Tensor:
+        audio = audio.numpy()
+
+    for segment in out_segments:
+        # set segment to NaN
+        start_sample = sec_to_samples(segment['start'])
+        end_sample = sec_to_samples(segment['end'])
+        audio[start_sample:end_sample] = np.nan
+    
+    # drop all NaN
+    audio = audio[~np.isnan(audio)]
+
+    # reshape to 2D torch tensor
+    audio = torch.unsqueeze(torch.from_numpy(audio), 0)
+
+    return audio
 
 """
+
 Main script
 """
 
