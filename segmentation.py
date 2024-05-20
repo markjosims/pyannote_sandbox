@@ -82,25 +82,66 @@ def load_and_resample(fp: str) -> torch.tensor:
     return wav
 
 def sec_to_samples(time_sec: float):
+    """`time_sec` is a time value in seconds.
+    Returns same time value in samples using
+    global constant SAMPLE_RATE.
+    """
     return int(time_sec*SAMPLE_RATE)
 
-def remove_segments(
+def segments_to_array(
+        segments: List[Dict[str, float]],
+        len_samples: Optional[int] = None
+    ) -> np.ndarray:
+    """
+    `segments` is a list of dicts containing start and end timestamps.
+    Return a numpy array of samples (scaled to the SAMPLING_RATE global
+    constant) containing 1s for samples corresponding to segment timestamps
+    and 0s elsewhere. Array will have length of `len_samples` if passed,
+    else the sample length corresponding to the maximum timestamp in
+    `segments`.
+    """
+    if not len_samples:
+        max_time = segments[-1]['end']
+        len_samples = sec_to_samples(max_time)
+
+    array = np.zeros(len_samples)
+    for seg in segments:
+        start_sample = sec_to_samples(seg['start'])
+        end_sample = sec_to_samples(seg['end'])
+        array[start_sample:end_sample] = 1
+    
+    return array
+
+def remove_segments_from_audio(
         audio: Union[torch.Tensor, np.ndarray],
-        out_segments: List[Dict[str, float]]
+        ipa_segments: List[Dict[str, float]],
+        sli_segments: List[Dict[str, float]],
     ) -> torch.tensor:
+    """
+        `audio` is a torch tensor or numpy array containing audio samples.
+        `ipa_segments` is a list of dicts containing start and end times
+        for ipa annotations from an Elan file,
+        and `sli_segments` is a list of speech segments classified as Tira
+        by an SLI model.
+        This function masks all samples which correspond to `sli_segments`
+        but not `ipa_segments`, then cuts them from the audio.
+        Returns a torch tensor containing all audio samples except for those
+        cut.
+    """
     if len(audio.shape) == 2:
         audio = audio[0]
     if type(audio) is torch.Tensor:
         audio = audio.numpy()
 
-    for segment in out_segments:
-        # set segment to NaN
-        start_sample = sec_to_samples(segment['start'])
-        end_sample = sec_to_samples(segment['end'])
-        audio[start_sample:end_sample] = np.nan
-    
-    # drop all NaN
-    audio = audio[~np.isnan(audio)]
+    vad_mask = segments_to_array(sli_segments, len_samples=len(audio))
+    ipa_mask = segments_to_array(ipa_segments, len_samples=len(audio))
+    ipa_mask*=2
+    mask = vad_mask + ipa_mask
+    # 0 - no annotation
+    # 1 - machine label annotation only
+    # 2 - ipa annotation only
+    # 3 - machine label + ipa annotation
+    audio = audio[mask!=1]
 
     # reshape to 2D torch tensor
     audio = torch.unsqueeze(torch.from_numpy(audio), 0)
@@ -108,7 +149,6 @@ def remove_segments(
     return audio
 
 """
-
 Main script
 """
 
