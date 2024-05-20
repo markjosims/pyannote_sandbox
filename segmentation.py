@@ -83,6 +83,11 @@ ELAN methods
 """
 
 def get_ipa_labels(elan_fp: str) -> List[Dict[str, Union[str, float]]]:
+    """
+    Read data from IPA Transcription tier in a .eaf file
+    indicated by `elan_fp`. Return list of dicts containing
+    start time, end time and value for each annotation.
+    """
     eaf = Elan.Eaf(elan_fp)
     ipa_tuples = eaf.get_annotation_data_for_tier('IPA Transcription')
     ipa_labels = [{'start': a[0], 'end': a[1], 'value': a[2]} for a in ipa_tuples]
