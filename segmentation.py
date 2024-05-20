@@ -7,6 +7,7 @@ import torch
 import torchaudio
 import json
 import numpy as np
+from pympi import Elan
 
 SAMPLE_RATE = 16000
 
@@ -71,6 +72,17 @@ def diarize(
             hook=hook,
         )
     return result
+
+"""
+ELAN methods
+"""
+
+def get_ipa_labels(elan_fp: str) -> List[Dict[str, Union[str, float]]]:
+    eaf = Elan.Eaf(elan_fp)
+    ipa_tuples = eaf.get_annotation_data_for_tier('IPA Transcription')
+    ipa_labels = [{'start': a[0], 'end': a[1], 'value': a[2]} for a in ipa_tuples]
+    return ipa_labels
+    
 
 """
 Audio handling methods
