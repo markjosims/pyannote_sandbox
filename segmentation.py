@@ -16,15 +16,14 @@ Pyannote and HuggingFace entry points
 """
 
 def perform_sli(
-        in_fp: Optional[str] = None,
+        in_fp: Union[str, List[str], None] = None,
         wav: Union[np.ndarray, torch.Tensor] = None,
         pipe: Optional[Pipeline]= None,
     ) -> List[Dict[str, Union[str, float]]]:
-        if not wav:
-            wav = load_and_resample(in_fp)
-        if len(wav.shape)==2:
+        
+        if wav and len(wav.shape)==2:
             wav = wav[0]
-        if type(wav) is torch.Tensor:
+        if wav and type(wav) is torch.Tensor:
             wav = wav.numpy()
 
 
@@ -34,7 +33,10 @@ def perform_sli(
         if torch.cuda.is_available():
             pipe.to(torch.device("cuda"))
 
-        result = pipe(wav)
+        if wav:
+            result = pipe(wav)
+        else:
+            result = pipe(in_fp)
         return result
 
 def perform_vad(
