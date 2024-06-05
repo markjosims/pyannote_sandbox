@@ -2,6 +2,7 @@ from transformers import pipeline, Pipeline
 from segmentation import *
 from tqdm import tqdm
 import tempfile
+import os
 
 # %load_ext autoreload
 # %autoreload 2
@@ -39,14 +40,13 @@ sli_list
 
 print(tempfile.mkdtemp())
 
-# +
 # create a temporary directory using the context manager
 with tempfile.TemporaryDirectory(prefix='temp') as tmpdirname:
     print('created temporary directory', tmpdirname)
     
     file_names = list()
     
-    for i in tqdm(range(len(vad_json))):
+    for i in range(len(vad_json)):
         start = sec_to_samples(vad_json[i]['start'])
         end = sec_to_samples(vad_json[i]['end'])
         clip = np.array(wav[start:end])
@@ -55,7 +55,10 @@ with tempfile.TemporaryDirectory(prefix='temp') as tmpdirname:
             fp.write(clip)
             name = f'segment{i}'
             fp.name = name
-            file_names.append(f'{tmpdirname}/{name}')
+            wav_path = os.path.join(tmpdirname, name)
+            file_names.append(wav_path)
     
-#     output = perform_sli(file_names)
+    output = perform_sli(file_names)
+
+
 
