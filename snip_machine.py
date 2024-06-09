@@ -53,9 +53,10 @@ with tempfile.TemporaryDirectory(prefix='temp') as tmpdirname:
         
         # with tempfile.NamedTemporaryFile() as fp:
         # fp.write(clip)
-        name = f'segment{i}'
+        name = f'segment{i}.wav'
         # fp.name = name
         wav_path = os.path.join(tmpdirname, name)
+        torchaudio.save(wav_path, clip, SAMPLE_RATE)
         file_names.append(wav_path)
     
     output = perform_sli(file_names)
