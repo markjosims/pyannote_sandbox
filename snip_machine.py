@@ -3,6 +3,7 @@ from segmentation import *
 from tqdm import tqdm
 import tempfile
 import os
+from pydub import AudioSegment
 
 # %load_ext autoreload
 # %autoreload 2
@@ -49,14 +50,16 @@ with tempfile.TemporaryDirectory(prefix='temp') as tmpdirname:
     for i in range(len(vad_json)):
         start = sec_to_samples(vad_json[i]['start'])
         end = sec_to_samples(vad_json[i]['end'])
-        clip = np.array(wav[start:end])
+        clip = wav[start:end]
         
         # with tempfile.NamedTemporaryFile() as fp:
         # fp.write(clip)
         name = f'segment{i}.wav'
         # fp.name = name
         wav_path = os.path.join(tmpdirname, name)
-        torchaudio.save(wav_path, clip, SAMPLE_RATE)
+        # torchaudio needs 2d tensor
+        clip_tensor = torch.unsqueeze(clip, 0)
+        torchaudio.save(wav_path, src=clip_tensor, sample_rate=SAMPLE_RATE)
         file_names.append(wav_path)
     
     output = perform_sli(file_names)
