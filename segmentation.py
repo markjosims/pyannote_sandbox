@@ -21,9 +21,9 @@ def perform_sli(
         pipe: Optional[Pipeline]= None,
     ) -> List[Dict[str, Union[str, float]]]:
         
-        if wav and len(wav.shape)==2:
+        if (wav is not None) and len(wav.shape)==2:
             wav = wav[0]
-        if wav and type(wav) is torch.Tensor:
+        if (wav is not None) and type(wav) is torch.Tensor:
             wav = wav.numpy()
 
 
@@ -33,7 +33,7 @@ def perform_sli(
         if torch.cuda.is_available():
             pipe.to(torch.device("cuda"))
 
-        if wav:
+        if wav is not None:
             result = pipe(wav)
         else:
             result = pipe(in_fp)
@@ -100,7 +100,7 @@ def get_ipa_labels(elan_fp: str) -> List[Dict[str, Union[str, float]]]:
 Audio handling methods
 """
 
-def load_and_resample(fp: str) -> torch.tensor:
+def load_and_resample(fp: str) -> torch.Tensor:
     wav_orig, sr_orig = torchaudio.load(fp)
     wav = torchaudio.functional.resample(wav_orig, sr_orig, SAMPLE_RATE)
     return wav
