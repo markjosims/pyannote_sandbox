@@ -51,12 +51,12 @@ with tempfile.TemporaryDirectory(prefix='temp') as tmpdirname:
         end = sec_to_samples(vad_json[i]['end'])
         clip = np.array(wav[start:end])
         
-        with tempfile.NamedTemporaryFile() as fp:
-            fp.write(clip)
-            name = f'segment{i}'
-            fp.name = name
-            wav_path = os.path.join(tmpdirname, name)
-            file_names.append(wav_path)
+        # with tempfile.NamedTemporaryFile() as fp:
+        # fp.write(clip)
+        name = f'segment{i}'
+        # fp.name = name
+        wav_path = os.path.join(tmpdirname, name)
+        file_names.append(wav_path)
     
     output = perform_sli(file_names)
 
